@@ -3,7 +3,7 @@ module KolmogorovArnold
 using Random
 using LinearAlgebra
 
-using NNLib
+using NNlib
 using LuxCore
 using WeightInitializers
 using ConcreteStructs
