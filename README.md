@@ -65,9 +65,10 @@ pK, stK = Lux.setup(rng, kan) |> device
   26.551 μs (137 allocations: 3.22 KiB)
   156.638 μs (565 allocations: 17.50 KiB)
 ```
-The promise with this architecture, however, is that a smaller KAN can do the work of a
+The promise with this architecture, however, is that a small KAN can potentially do the work of a
 much bigger MLP.
-More experiments need to be done to assess its performance in relation to MLPs.
+More experiments need to be done to assess the validity of this claim.
 
-This package will be actively developed over the next few weeks. Feel fre to open issues
-or create PRs with performance improvements.
+This package will be actively developed for the time-being.
+Once a stable version is figured out, we can consider opening a PR on [`Lux.jl`](https://github.com/LuxDL/Lux.jl).
+Feel fre to open issues or create PRs in the meantime with features, comparisons, or performance improvements.
