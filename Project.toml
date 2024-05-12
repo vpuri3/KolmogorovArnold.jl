@@ -3,6 +3,14 @@ uuid = "eec8b66d-f71a-4a43-b228-0fe5d6721cd3"
 authors = ["Vedant Puri <vedantpuri@gmail.com> and contributors"]
 version = "1.0.0-DEV"
 
+[deps]
+ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
+NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+WeightInitializers = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
+
 [compat]
 julia = "1.6"
 

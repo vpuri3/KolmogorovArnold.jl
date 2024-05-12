@@ -1,5 +1,16 @@
 module KolmogorovArnold
 
-# Write your package code here.
+using Random
+using LinearAlgebra
 
-end
+using NNLib
+using LuxCore
+using WeightInitializers
+using ConcreteStructs
+
+include("utils.jl")
+
+include("type.jl")
+export KDense
+
+end # module
