@@ -7,6 +7,9 @@ for the [`Lux.jl`](https://lux.csail.mit.edu/stable/) framework.
 This implementation is based on [`efficient-kan`](https://github.com/Blealtan/efficient-kan)
 and ['FastKAN'](https://github.com/ZiyaoLi/fast-kan) which resolve the performance
 issues with the [original implementation](https://github.com/KindXiaoming/pykan).
+Key implementation details here are:
+- We fix our grid to be in `[-1, 1]` and normalize the the input to lie in that interval with `tanh` or `NNlib.tanh_fast`.
+- We use radial basis functions in place of the spline basis as the former is very efficient to evaluate.
 
 ```julia
 using Random, KolmogorovArnold
