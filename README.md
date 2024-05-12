@@ -50,9 +50,9 @@ Chain(
 ```
 ```julia
 using CUDA, LuxCUDA
+device = Lux.gpu_device()
 
 x = rand32(rng, 1, 1000) |> device
-
 pM, stM = Lux.setup(rng, mlp) |> device
 pK, stK = Lux.setup(rng, kan) |> device
 
