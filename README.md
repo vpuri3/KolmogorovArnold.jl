@@ -28,12 +28,12 @@ consumes 6x more memory and is 4x slower.
 ```julia
 using Lux, KolmogorovArnold
 
-mlp = Chain(Dense(1, 32), Dense(32, 32), Dense(32, 1),)
+mlp = Chain(Dense(1, 32, tanh), Dense(32, 32, tanh), Dense(32, 1),)
 ```
 ```julia
 Chain(
-    layer_1 = Dense(1 => 32),           # 64 parameters
-    layer_2 = Dense(32 => 32),          # 1_056 parameters
+    layer_1 = Dense(1 => 32, tanh_fast),  # 64 parameters
+    layer_2 = Dense(32 => 32, tanh_fast),  # 1_056 parameters
     layer_3 = Dense(32 => 1),           # 33 parameters
 )         # Total: 1_153 parameters,
           #        plus 0 states.
@@ -62,10 +62,23 @@ pK, stK = Lux.setup(rng, kan) |> device
 @btime CUDA.@sync $kan($x, $pK, $stK)
 ```
 ```julia
-  26.551 μs (137 allocations: 3.22 KiB)
-  156.638 μs (565 allocations: 17.50 KiB)
+  34.360 μs (175 allocations: 4.78 KiB)
+  155.781 μs (565 allocations: 17.50 KiB)
 ```
-The promise with this architecture, however, is that a small KAN can potentially do the work of a
+With `use_base_activcation = false`, the performance of KAN effectively doubles
+```julia
+kan = Chain(
+    KDense(1, 8, 15; use_base_activation = false),
+    KDense(8, 8, 15; use_base_activation = false),
+    KDense(8, 1, 15; use_base_activation = false),
+)
+p, st = Lux.setup(rng, kan) |> device
+@btime CUDA.@sync $mlp($x, $p, $st)
+```
+```julia
+  83.275 μs (310 allocations: 10.00 KiB)
+```
+The promise with this architecture is that a small KAN can potentially do the work of a
 much bigger MLP.
 More experiments need to be done to assess the validity of this claim.
 
