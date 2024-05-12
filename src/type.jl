@@ -1,4 +1,9 @@
 #
+#======================================================#
+# Kolmogorov-Arnold Layer
+# https://github.com/mintisan/awesome-kan
+# https://github.com/ZiyaoLi/fast-kan/tree/master
+#======================================================#
 @concrete struct KDense <: LuxCore.AbstractExplicitLayer
     in_dims::Int
     out_dims::Int
