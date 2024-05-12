@@ -13,15 +13,14 @@ Key implementation details here are:
 
 ```julia
 using Random, KolmogorovArnold
-
-in_dim = 4
-out_dim = 4
-grid_len = 8
-
 rng = Random.default_rng()
+
+in_dim, out_dim, grid_len = 4, 4, 8
+layer = KDense(in_dim, out_dim, grid_len)
 p, st = Lux.setup(rng, layer)
 
-layer(rand32(rng, in_dim, 10), p, st)
+x = rand32(rng, in_dim, 10)
+y = layer(x, p, st)
 ```
 
 Compared to an MLP with the same number of parameters, a Kolmogorov-Arnold network (KAN)
