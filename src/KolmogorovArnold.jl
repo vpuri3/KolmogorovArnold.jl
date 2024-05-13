@@ -8,6 +8,9 @@ using LuxCore
 using WeightInitializers
 using ConcreteStructs
 
+using ChainRulesCore
+const CRC = ChainRulesCore
+
 include("utils.jl")
 
 include("type.jl")

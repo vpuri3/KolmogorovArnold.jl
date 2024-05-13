@@ -41,8 +41,7 @@ function LuxCore.initialparameters(
     p = (;
         W1 = l.init_W1(rng, l.out_dims, l.grid_len * l.in_dims),
     )
-
-    # W1 = reshape(W1, l.out_dims, l.in_dims, l.grid_len)
+    # W1 = l.init_W1(rng, l.out_dims, l.grid_len,  l.in_dims),
 
     if use_base_act
         p = (;
@@ -87,9 +86,6 @@ function (l::KDense{use_base_act})(x::AbstractArray, p, st) where{use_base_act}
     basis  = rbf.(x_resh, st.grid, l.denominator)      # [G, I * K]
     basis  = reshape(basis, l.grid_len * l.in_dims, K) # [G * I, K]
     spline = p.W1 * basis                              # [O, K]
-
-    # would tullio speed this up?
-    # @tullio spline[O, K] = W1[O, I, G] * basis[G, I, K]
 
     y = if use_base_act
         base = p.W2 * l.base_act.(x)
