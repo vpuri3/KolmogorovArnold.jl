@@ -48,7 +48,7 @@ f_kan(p) = kan(x, p, stK)[1] |> sum
 @btime CUDA.@sync Zygote.gradient($f_kan, $pK) # 1.250 ms (3879 allocations: 136.06 KiB)
 
 ```
-With `use_base_act = false`, the performance of KAN effectively doubles
+The performance of KANs improves significantly with `use_base_act = false`.
 ```julia
 kan = Chain(
     KDense( 1, 10, 10; use_base_act = false),
