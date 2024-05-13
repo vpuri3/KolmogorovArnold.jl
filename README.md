@@ -73,7 +73,7 @@ kan = Chain(
     KDense(8, 1, 15; use_base_act = false),
 )
 p, st = Lux.setup(rng, kan) |> device
-@btime CUDA.@sync $mlp($x, $p, $st)
+@btime CUDA.@sync $kan($x, $p, $st)
 ```
 ```julia
   83.275 μs (310 allocations: 10.00 KiB)
