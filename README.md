@@ -26,32 +26,11 @@ y = layer(x, p, st)
 We compare the performance of KAN with an MLP that has the same number of parameters.
 ```julia
 using Lux, KolmogorovArnold
-
-mlp = Chain(Dense(1, 32, tanh), Dense(32, 32, tanh), Dense(32, 1),)
-```
-```julia
-Chain(
-    layer_1 = Dense(1 => 32, tanh_fast),  # 64 parameters
-    layer_2 = Dense(32 => 32, tanh_fast),  # 1_056 parameters
-    layer_3 = Dense(32 => 1),           # 33 parameters
-)         # Total: 1_153 parameters,
-          #        plus 0 states.
-```
-
-```julia
-kan = Chain(KDense(1, 10, 10), KDense(10, 10, 10), KDense(10, 1, 10))
-```
-```julia
-Chain(
-    layer_1 = KDense(),                 # 110 parameters, plus 10
-    layer_2 = KDense(),                 # 1_100 parameters, plus 10
-    layer_3 = KDense(),                 # 1110 parameters, plus 10
-)         # Total: 1_280 parameters,
-          #        plus 45 states.
-```
-```julia
-using CUDA, LuxCUDA
+using CUDA, LuxDeviceUtils
 device = Lux.gpu_device()
+
+mlp = Chain(Dense(1, 32, tanh), Dense(32, 32, tanh), Dense(32, 1),) # 1_153 parameters
+kan = Chain(KDense(1, 10, 10), KDense(10, 10, 10), KDense(10, 1, 10)) # 1_320 parameters plus 30 states
 
 x = rand32(rng, 1, 1000) |> device
 pM, stM = Lux.setup(rng, mlp) |> device
@@ -75,15 +54,15 @@ kan = Chain(
     KDense( 1, 10, 10; use_base_act = false),
     KDense(10, 10, 10; use_base_act = false),
     KDense(10,  1, 10; use_base_act = false),
-)
+) # 1_200 parameters, plus 30 states
 p, st = Lux.setup(rng, kan) |> device
 f(p) = mlp(x, p, st)[1] |> sum
 
 @btime CUDA.@sync $kan($x, $p, $st) # 83.275 μs (310 allocations: 10.00 KiB)
 @btime CUDA.@sync Zygote.gradient($f, $p) # 874.364 μs (2746 allocations: 99.70 KiB)
 ```
-Although KANs are currently slower than MLPs, the promise with this
-architecture is that a small KAN can potentially do the work of a much bigger MLP.
+Although KANs are currently 2-3x slower than an MLPs with the same number of parameters,
+the promise with this architecture is that a small KAN can potentially do the work of a much bigger MLP.
 More experiments need to be done to assess the validity of this claim.
 
 This package will be actively developed for the time-being.
@@ -92,4 +71,5 @@ Feel fre to open issues or create PRs in the meantime with features, comparisons
 
 # TODO:
 - Grid update with linear least sq solve
-- devise good initialization schemes
+- devise good initialization schemes. RBF coefficients and base activation weights are currently initialized with `WeightInitializers.glorot_uniform`.
+- figure out what are good optimization strategies (choice of optimizer, learning rate decay, etc)
