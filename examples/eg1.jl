@@ -27,9 +27,9 @@ function main()
     )
 
     kan = Chain(
-        KDense(1, 8, 15; use_base_act = false),
-        KDense(8, 8, 15; use_base_act = false),
-        KDense(8, 1, 15; use_base_act = false),
+        KDense(1, 8, 15; use_base_act = true),
+        KDense(8, 8, 15; use_base_act = true),
+        KDense(8, 1, 15; use_base_act = true),
     )
 
     # display(mlp)

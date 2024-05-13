@@ -65,12 +65,12 @@ pK, stK = Lux.setup(rng, kan) |> device
   34.360 μs (175 allocations: 4.78 KiB)
   155.781 μs (565 allocations: 17.50 KiB)
 ```
-With `use_base_activcation = false`, the performance of KAN effectively doubles
+With `use_base_act = false`, the performance of KAN effectively doubles
 ```julia
 kan = Chain(
-    KDense(1, 8, 15; use_base_activation = false),
-    KDense(8, 8, 15; use_base_activation = false),
-    KDense(8, 1, 15; use_base_activation = false),
+    KDense(1, 8, 15; use_base_act = false),
+    KDense(8, 8, 15; use_base_act = false),
+    KDense(8, 1, 15; use_base_act = false),
 )
 p, st = Lux.setup(rng, kan) |> device
 @btime CUDA.@sync $mlp($x, $p, $st)

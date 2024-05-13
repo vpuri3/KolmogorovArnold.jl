@@ -73,19 +73,7 @@ function LuxCore.parameterlength(
     len
 end
 
-function (l::KDense{false})(x::AbstractVecOrMat, p, st)
-    K = size(x, 2)                # [I, K]
-    x_resh = reshape(x, 1, :)     # [1, I * K]
-    x_norm = l.normalizer(x_resh) # ∈ [-1, 1]
-
-    basis = rbf.(x_norm, st.grid, l.denominator)      # [G, I * K]
-    basis = reshape(basis, l.grid_len * l.in_dims, K) # [G * I, K]
-    y = p.W1 * basis                                  # [O, K]
-
-    y, st
-end 
-
-function (l::KDense{true})(x::AbstractVecOrMat, p, st)
+function (l::KDense{use_base_act})(x::AbstractVecOrMat, p, st) where{use_base_act}
     K = size(x, 2)                # [I, K]
     x_resh = reshape(x, 1, :)     # [1, I * K]
     x_norm = l.normalizer(x_resh) # ∈ [-1, 1]
@@ -94,7 +82,11 @@ function (l::KDense{true})(x::AbstractVecOrMat, p, st)
     basis = reshape(basis, l.grid_len * l.in_dims, K) # [G * I, K]
     spline = p.W1 * basis                             # [O, K]
 
-    y = spline + p.W2 * l.base_act.(x)
+    y = if use_base_act
+        spline + p.W2 * l.base_act.(x)
+    else
+        spline
+    end
 
     y, st
 end 
