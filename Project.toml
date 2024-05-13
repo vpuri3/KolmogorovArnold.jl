@@ -15,14 +15,14 @@ WeightInitializers = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 julia = "1.6"
 
 [extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
-Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
-Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
-OptimizationOptimJL = "36348300-93cb-4f02-beb5-3c3902f8871e"
-cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 LuxDeviceUtils = "34f89e08-e1d5-43b4-8944-0b49ac560553"
+Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
+OptimizationOptimJL = "36348300-93cb-4f02-beb5-3c3902f8871e"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [targets]
 test = ["Test", "Lux", "Zygote", "Optimisers", "OptimizationOptimJL"]

@@ -85,3 +85,7 @@ More experiments need to be done to assess the validity of this claim.
 This package will be actively developed for the time-being.
 Once a stable version is figured out, we can consider opening a PR on [`Lux.jl`](https://github.com/LuxDL/Lux.jl).
 Feel fre to open issues or create PRs in the meantime with features, comparisons, or performance improvements.
+
+# TODO:
+- Grid update with linear least sq solve
+- devise good initialization schemes

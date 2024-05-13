@@ -42,6 +42,8 @@ function LuxCore.initialparameters(
         W1 = l.init_W1(rng, l.out_dims, l.grid_len * l.in_dims),
     )
 
+    # W1 = reshape(W1, l.out_dims, l.in_dims, l.grid_len)
+
     if use_base_act
         p = (;
             p...,
@@ -73,21 +75,29 @@ function LuxCore.parameterlength(
     len
 end
 
-function (l::KDense{use_base_act})(x::AbstractVecOrMat, p, st) where{use_base_act}
-    K = size(x, 2)                # [I, K]
-    x_resh = reshape(x, 1, :)     # [1, I * K]
-    x_norm = l.normalizer(x_resh) # ∈ [-1, 1]
+function (l::KDense{use_base_act})(x::AbstractArray, p, st) where{use_base_act}
+    size_in  = size(x)                          # [I, ..., batch,]
+    size_out = (l.out_dims, size_in[2:end]...,) # [O, ..., batch,]
 
-    basis = rbf.(x_norm, st.grid, l.denominator)      # [G, I * K]
-    basis = reshape(basis, l.grid_len * l.in_dims, K) # [G * I, K]
-    spline = p.W1 * basis                             # [O, K]
+    x = reshape(x, l.in_dims, :)
+    K = size(x, 2)
+
+    x_norm = l.normalizer(x)                           # ∈ [-1, 1]
+    x_resh = reshape(x_norm, 1, :)                     # [1, K]
+    basis  = rbf.(x_resh, st.grid, l.denominator)      # [G, I * K]
+    basis  = reshape(basis, l.grid_len * l.in_dims, K) # [G * I, K]
+    spline = p.W1 * basis                              # [O, K]
+
+    # would tullio speed this up?
+    # @tullio spline[O, K] = W1[O, I, G] * basis[G, I, K]
 
     y = if use_base_act
-        spline + p.W2 * l.base_act.(x)
+        base = p.W2 * l.base_act.(x)
+        spline + base
     else
         spline
     end
 
-    y, st
-end 
+    reshape(y, size_out), st
+end
 #
