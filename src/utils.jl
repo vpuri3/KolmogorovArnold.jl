@@ -1,7 +1,6 @@
 #
-@inline function rbf(x, z, h)
-    # exp(-((x - z)/h)^2)
-    y = (x - z) / h
+@inline function rbf(x, z, h) # exp(-((x - z)/h)^2)
+    y = (x - z) * (1/h)
     gaussian1D(y)
 end
 

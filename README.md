@@ -23,8 +23,7 @@ x = rand32(rng, in_dim, 10)
 y = layer(x, p, st)
 ```
 
-Compared to an MLP with the same number of parameters, a Kolmogorov-Arnold network (KAN)
-consumes 6x more memory and is 4x slower.
+We compare the performance of KAN with an MLP that has the same number of parameters.
 ```julia
 using Lux, KolmogorovArnold
 
@@ -40,13 +39,13 @@ Chain(
 ```
 
 ```julia
-kan = Chain(KDense(1, 8, 15), KDense(8, 8, 15), KDense(8, 1, 15))
+kan = Chain(KDense(1, 10, 10), KDense(10, 10, 10), KDense(10, 1, 10))
 ```
 ```julia
 Chain(
-    layer_1 = KDense(),                 # 128 parameters, plus 15
-    layer_2 = KDense(),                 # 1_024 parameters, plus 15
-    layer_3 = KDense(),                 # 128 parameters, plus 15
+    layer_1 = KDense(),                 # 110 parameters, plus 10
+    layer_2 = KDense(),                 # 1_100 parameters, plus 10
+    layer_3 = KDense(),                 # 1110 parameters, plus 10
 )         # Total: 1_280 parameters,
           #        plus 45 states.
 ```
@@ -58,28 +57,33 @@ x = rand32(rng, 1, 1000) |> device
 pM, stM = Lux.setup(rng, mlp) |> device
 pK, stK = Lux.setup(rng, kan) |> device
 
-@btime CUDA.@sync $mlp($x, $pM, $stM)
-@btime CUDA.@sync $kan($x, $pK, $stK)
-```
-```julia
-  34.360 μs (175 allocations: 4.78 KiB)
-  155.781 μs (565 allocations: 17.50 KiB)
+# Forward pass
+@btime CUDA.@sync $mlp($x, $pM, $stM) # 34.360 μs (175 allocations: 4.78 KiB)
+@btime CUDA.@sync $kan($x, $pK, $stK) # 155.781 μs (565 allocations: 17.50 KiB)
+
+f_mlp(p) = mlp(x, p, stM)[1] |> sum
+f_kan(p) = kan(x, p, stK)[1] |> sum
+
+# Backward pass
+@btime CUDA.@sync Zygote.gradient($f_mlp, $pM) # 446.835 μs (1498 allocations: 56.94 KiB)
+@btime CUDA.@sync Zygote.gradient($f_kan, $pK) # 1.250 ms (3879 allocations: 136.06 KiB)
+
 ```
 With `use_base_act = false`, the performance of KAN effectively doubles
 ```julia
 kan = Chain(
-    KDense(1, 8, 15; use_base_act = false),
-    KDense(8, 8, 15; use_base_act = false),
-    KDense(8, 1, 15; use_base_act = false),
+    KDense( 1, 10, 10; use_base_act = false),
+    KDense(10, 10, 10; use_base_act = false),
+    KDense(10,  1, 10; use_base_act = false),
 )
 p, st = Lux.setup(rng, kan) |> device
-@btime CUDA.@sync $kan($x, $p, $st)
+f(p) = mlp(x, p, st)[1] |> sum
+
+@btime CUDA.@sync $kan($x, $p, $st) # 83.275 μs (310 allocations: 10.00 KiB)
+@btime CUDA.@sync Zygote.gradient($f, $p) # 874.364 μs (2746 allocations: 99.70 KiB)
 ```
-```julia
-  83.275 μs (310 allocations: 10.00 KiB)
-```
-The promise with this architecture is that a small KAN can potentially do the work of a
-much bigger MLP.
+Although KANs are currently slower than MLPs, the promise with this
+architecture is that a small KAN can potentially do the work of a much bigger MLP.
 More experiments need to be done to assess the validity of this claim.
 
 This package will be actively developed for the time-being.
