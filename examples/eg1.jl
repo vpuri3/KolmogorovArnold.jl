@@ -43,8 +43,13 @@ function main()
 
     stM, stK = device(stM), device(stK)
 
-    @btime CUDA.@sync $mlp($x, $pM, $stM)
-    @btime CUDA.@sync $kan($x, $pK, $stK)
+    if device isa LuxDeviceUtils.AbstractLuxGPUDevice
+        @btime CUDA.@sync $mlp($x, $pM, $stM)
+        @btime CUDA.@sync $kan($x, $pK, $stK)
+    else
+        @btime $mlp($x, $pM, $stM)
+        @btime $kan($x, $pK, $stK)
+    end
 
     nothing
 end
