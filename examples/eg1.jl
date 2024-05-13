@@ -9,7 +9,7 @@ let
     !(tstpath in LOAD_PATH) && push!(LOAD_PATH, tstpath)
 end
 
-using Lux
+using Lux, ComponentArrays
 using LuxDeviceUtils, CUDA, LuxCUDA
 using BenchmarkTools
 
@@ -20,14 +20,28 @@ device = Lux.gpu_device()
 function main()
     x = rand32(rng, 1, 1000) |> device
 
-    mlp = Chain(Dense(1, 32), Dense(32, 32), Dense(32, 1),)
-    kan = Chain(KDense(1, 8, 15), KDense(8, 8, 15), KDense(8, 1, 15))
+    mlp = Chain(
+        Dense(1, 32, tanh),
+        Dense(32, 32, tanh),
+        Dense(32, 1),
+    )
 
-    pM, stM = Lux.setup(rng, mlp) |> device
-    pK, stK = Lux.setup(rng, kan) |> device
+    kan = Chain(
+        KDense(1, 8, 15; use_base_act = false),
+        KDense(8, 8, 15; use_base_act = false),
+        KDense(8, 1, 15; use_base_act = false),
+    )
 
-    display(mlp)
-    display(kan)
+    # display(mlp)
+    # display(kan)
+
+    pM, stM = Lux.setup(rng, mlp)
+    pK, stK = Lux.setup(rng, kan)
+
+    pM = ComponentArray(pM) |> device
+    pK = ComponentArray(pK) |> device
+
+    stM, stK = device(stM), device(stK)
 
     @btime CUDA.@sync $mlp($x, $pM, $stM)
     @btime CUDA.@sync $kan($x, $pK, $stK)
@@ -36,6 +50,5 @@ function main()
 end
 
 main()
-
 
 nothing
