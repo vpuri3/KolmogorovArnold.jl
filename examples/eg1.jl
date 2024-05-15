@@ -26,7 +26,6 @@ device = Lux.gpu_device()
 
 function main()
     x = rand32(rng, 1, 1000) |> device
-    y = rand32(rng, 1, 1000) |> device
 
     mlp = Chain(
         Dense(1, 32, tanh),
@@ -35,9 +34,9 @@ function main()
     )
     
     kan = Chain(
-        KDense( 1, 10, 10; use_base_act = true),
-        KDense(10, 10, 10; use_base_act = true),
-        KDense(10,  1, 10; use_base_act = true),
+        KDense( 1, 10, 10; use_base_act = false),
+        KDense(10, 10, 10; use_base_act = false),
+        KDense(10,  1, 10; use_base_act = false),
     )
 
     display(mlp)
@@ -54,24 +53,31 @@ function main()
     f_mlp(p) = mlp(x, p, stM)[1] |> sum
     f_kan(p) = kan(x, p, stK)[1] |> sum
 
+    # # Zygote is type unstable - consider using generated functinos
+    # _, pbM = Zygote.pullback(f_mlp, pM)
+    # _, pbK = Zygote.pullback(f_kan, pK)
+
+    # @code_warntype pbM(x)
+    # @code_warntype pbK(x)
+
     if device isa LuxDeviceUtils.AbstractLuxGPUDevice
         println("# FWD PASS")
-
+    
         @btime CUDA.@sync $mlp($x, $pM, $stM)
         @btime CUDA.@sync $kan($x, $pK, $stK)
-
+    
         println("# BWD PASS")
 
         @btime CUDA.@sync Zygote.gradient($f_mlp, $pM)
         @btime CUDA.@sync Zygote.gradient($f_kan, $pK)
     else
         println("# FWD PASS")
-
+    
         @btime $mlp($x, $pM, $stM)
         @btime $kan($x, $pK, $stK)
-
+    
         println("# BWD PASS")
-
+    
         @btime Zygote.gradient($f_mlp, $pM)
         @btime Zygote.gradient($f_kan, $pK)
     end
@@ -80,5 +86,3 @@ function main()
 end
 
 main()
-
-nothing

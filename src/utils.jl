@@ -14,8 +14,3 @@ function CRC.rrule(::typeof(gaussian1D), x)
     return y, ∇gaussian1D
 end
 
-# from https://github.com/LuxDL/Lux.jl/pull/627
-@inline silu(x) = x * sigmoid(x)
-@inline silu_fast(x) = x * sigmoid_fast(x)
-@inline NNlib.fast_act(::typeof(silu), ::AbstractArray=1:0) = silu_fast
-

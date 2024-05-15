@@ -6,31 +6,60 @@
     in_dims::Int
     out_dims::Int
     grid_len::Int
-    denominator
+    #
     normalizer
+    grid_lims
+    denominator
+    #
     base_act
-    init_W1
-    init_W2
+    init_C
+    init_W
 end
 
 function KDense(
     in_dims::Int,
     out_dims::Int,
     grid_len::Int;
+    #
+    normalizer = tanh,
+    grid_lims::NTuple{2, Real} = (-1.0f0, 1.0f0),
     denominator = Float32(2 / (grid_len - 1)),
-    base_act = silu,
-    init_W1 = glorot_uniform,
-    init_W2 = glorot_uniform,
+    #
+    base_act = swish,
     use_base_act = true,
+    #
+    init_C = glorot_uniform,
+    init_W = glorot_uniform,
     use_fast_act::Bool = true,
 )
-    normalizer = use_fast_act ? tanh_fast : tanh
-    base_act = use_fast_act ? NNlib.fast_act(base_act) : base_act
+    T = promote_type(eltype.(grid_lims)...)
+
+    if isnothing(grid_lims)
+        grid_lims = if normalizer ∈ (sigmoid, sigmoid_fast)
+            (0, 1)
+        elseif normalizer ∈ (tanh, tanh_fast, softsign)
+            (-1, 1)
+        else
+            (-1, 1)
+        end
+    end
+
+    grid_span =  grid_lims[2] > grid_lims[1]
+    @assert grid_span > 0
+
+    if isnothing(denominator)
+        denominator = grid_span / (grid_len - 1)
+    end
+
+    if use_fast_act
+        base_act = NNlib.fast_act(base_act)
+        normalizer = NNlib.fast_act(normalizer)
+    end
 
     KDense{use_base_act}(
         in_dims, out_dims, grid_len,
-        denominator, normalizer, base_act,
-        init_W1, init_W2,
+        normalizer, T.(grid_lims), T(denominator),
+        base_act, init_C, init_W,
     )
 end
 
@@ -39,14 +68,14 @@ function LuxCore.initialparameters(
     l::KDense{use_base_act}
 ) where{use_base_act}
     p = (;
-        W1 = l.init_W1(rng, l.out_dims, l.grid_len * l.in_dims),
+        C = l.init_C(rng, l.out_dims, l.grid_len * l.in_dims),
     )
-    # W1 = l.init_W1(rng, l.out_dims, l.grid_len,  l.in_dims),
+    # C = l.init_C(rng, l.out_dims, l.grid_len,  l.in_dims),
 
     if use_base_act
         p = (;
             p...,
-            W2 = l.init_W2(rng, l.out_dims, l.in_dims),
+            W = l.init_W(rng, l.out_dims, l.in_dims),
         )
     end
 
@@ -54,9 +83,9 @@ function LuxCore.initialparameters(
 end
 
 function LuxCore.initialstates(::AbstractRNG, l::KDense,)
-    grid = collect(LinRange(-1, 1, l.grid_len)) .|> Float32
-
-    (; grid,)
+    (;
+        grid = collect(LinRange(l.grid_lims..., l.grid_len))
+    )
 end
 
 function LuxCore.statelength(l::KDense)
@@ -81,14 +110,14 @@ function (l::KDense{use_base_act})(x::AbstractArray, p, st) where{use_base_act}
     x = reshape(x, l.in_dims, :)
     K = size(x, 2)
 
-    x_norm = l.normalizer(x)                           # ∈ [-1, 1]
+    x_norm = l.normalizer.(x)                          # ∈ [-1, 1]
     x_resh = reshape(x_norm, 1, :)                     # [1, K]
     basis  = rbf.(x_resh, st.grid, l.denominator)      # [G, I * K]
     basis  = reshape(basis, l.grid_len * l.in_dims, K) # [G * I, K]
-    spline = p.W1 * basis                              # [O, K]
+    spline = p.C * basis                               # [O, K]
 
     y = if use_base_act
-        base = p.W2 * l.base_act.(x)
+        base = p.W * l.base_act.(x)
         spline + base
     else
         spline
@@ -96,4 +125,5 @@ function (l::KDense{use_base_act})(x::AbstractArray, p, st) where{use_base_act}
 
     reshape(y, size_out), st
 end
+#======================================================#
 #
