@@ -11,6 +11,7 @@
     grid_lims
     denominator
     #
+    basis_func
     base_act
     init_C
     init_W
@@ -24,6 +25,8 @@ function KDense(
     normalizer = tanh,
     grid_lims::NTuple{2, Real} = (-1.0f0, 1.0f0),
     denominator = Float32(2 / (grid_len - 1)),
+    #
+    basis_func = rbf,
     #
     base_act = swish,
     use_base_act = true,
@@ -52,6 +55,7 @@ function KDense(
     end
 
     if use_fast_act
+        basis_func = NNlib.fast_act(basis_func)
         base_act = NNlib.fast_act(base_act)
         normalizer = NNlib.fast_act(normalizer)
     end
@@ -59,7 +63,7 @@ function KDense(
     KDense{use_base_act}(
         in_dims, out_dims, grid_len,
         normalizer, T.(grid_lims), T(denominator),
-        base_act, init_C, init_W,
+        basis_func, base_act, init_C, init_W,
     )
 end
 
@@ -68,9 +72,8 @@ function LuxCore.initialparameters(
     l::KDense{use_base_act}
 ) where{use_base_act}
     p = (;
-        C = l.init_C(rng, l.out_dims, l.grid_len * l.in_dims),
+        C = l.init_C(rng, l.out_dims, l.grid_len * l.in_dims), # [O, G, I]
     )
-    # C = l.init_C(rng, l.out_dims, l.grid_len,  l.in_dims),
 
     if use_base_act
         p = (;
@@ -110,11 +113,11 @@ function (l::KDense{use_base_act})(x::AbstractArray, p, st) where{use_base_act}
     x = reshape(x, l.in_dims, :)
     K = size(x, 2)
 
-    x_norm = l.normalizer.(x)                          # ∈ [-1, 1]
-    x_resh = reshape(x_norm, 1, :)                     # [1, K]
-    basis  = rbf.(x_resh, st.grid, l.denominator)      # [G, I * K]
-    basis  = reshape(basis, l.grid_len * l.in_dims, K) # [G * I, K]
-    spline = p.C * basis                               # [O, K]
+    x_norm = l.normalizer.(x)                              # ∈ [-1, 1]
+    x_resh = reshape(x_norm, 1, :)                         # [1, K]
+    basis  = l.basis_func.(x_resh, st.grid, l.denominator) # [G, I * K]
+    basis  = reshape(basis, l.grid_len * l.in_dims, K)     # [G * I, K]
+    spline = p.C * basis                                   # [O, K]
 
     y = if use_base_act
         base = p.W * l.base_act.(x)

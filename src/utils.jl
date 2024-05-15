@@ -1,16 +1,43 @@
 #
+#======================================================#
+# Radial basis functions (RBF)
+#======================================================#
+
 @inline function rbf(x, z, h) # exp(-((x - z)/h)^2)
     y = (x - z) * (1/h)
-    gaussian1D(y)
+    _rbf(y)
 end
 
-@inline gaussian1D(x) = exp(-x^2)
+@inline _rbf(x) = exp(-x^2)
 
-function CRC.rrule(::typeof(gaussian1D), x)
+function CRC.rrule(::typeof(_rbf), x)
     T = eltype(x)
-    y = gaussian1D(x)
-    ∇gaussian1D(ȳ) = -T(2) * x * y * ȳ
+    y = _rbf(x)
+    @inline ∇_rbf(ȳ) = -T(2) * x * y * ȳ
 
-    return y, ∇gaussian1D
+    y, ∇_rbf
 end
 
+#======================================================#
+# Reflectional SWitch Activation Function (RSWAF)
+#======================================================#
+
+@inline function rswaf(x, z, h)
+    y = (x - z) * (1/h)
+    _rswaf(y)
+end
+
+@inline function _rswaf(x) # sech(x)^2
+    1 - tanh(x)^2
+end
+
+function CRC.rrule(::typeof(_rswaf), x)
+    T = eltype(x)
+    tx = tanh(x)
+    y = T(1) - tx^2
+    @inline ∇_rswaf(ȳ) = -T(2) * tx * y * ȳ
+
+    y, ∇_rswaf
+end
+
+#

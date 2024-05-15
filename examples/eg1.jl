@@ -1,6 +1,6 @@
 #
-using Random
 using KolmogorovArnold
+using Random, LinearAlgebra
 
 # Add test dependencies to env stack
 let 
@@ -34,9 +34,9 @@ function main()
     )
     
     kan = Chain(
-        KDense( 1, 10, 10; use_base_act = false),
-        KDense(10, 10, 10; use_base_act = false),
-        KDense(10,  1, 10; use_base_act = false),
+        KDense( 1, 10, 10; use_base_act = false, basis_func = rswaf),
+        KDense(10, 10, 10; use_base_act = false, basis_func = rswaf),
+        KDense(10,  1, 10; use_base_act = false, basis_func = rswaf),
     )
 
     display(mlp)

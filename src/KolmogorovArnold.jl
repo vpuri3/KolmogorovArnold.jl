@@ -12,6 +12,7 @@ using ChainRulesCore
 const CRC = ChainRulesCore
 
 include("utils.jl")
+export rbf, rswaf
 
 include("type.jl")
 export KDense
