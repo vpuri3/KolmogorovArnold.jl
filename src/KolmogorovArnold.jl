@@ -14,7 +14,7 @@ const CRC = ChainRulesCore
 include("utils.jl")
 export rbf, rswaf
 
-include("type.jl")
+include("kdense.jl")
 export KDense
 
 end # module

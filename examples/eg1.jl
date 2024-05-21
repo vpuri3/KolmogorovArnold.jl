@@ -24,19 +24,27 @@ rng = Random.default_rng()
 Random.seed!(rng, 0)
 device = Lux.gpu_device()
 
+#======================================================#
 function main()
     x = rand32(rng, 1, 1000) |> device
 
+    nM, nK, G =  32, 10, 10
+    nM, nK, G = 128, 40, 10
+
     mlp = Chain(
-        Dense(1, 32, tanh),
-        Dense(32, 32, tanh),
-        Dense(32, 1),
+        Dense(1, nM, tanh),
+        Dense(nM, nM, tanh),
+        Dense(nM, 1),
     )
+
+    use_base_act = false
+    basis_func = rbf # rbf, rswaf
+    normalizer = softsign
     
     kan = Chain(
-        KDense( 1, 10, 10; use_base_act = false, basis_func = rswaf),
-        KDense(10, 10, 10; use_base_act = false, basis_func = rswaf),
-        KDense(10,  1, 10; use_base_act = false, basis_func = rswaf),
+        KDense( 1, nK, G; use_base_act, basis_func, normalizer),
+        KDense(nK, nK, G; use_base_act, basis_func, normalizer),
+        KDense(nK,  1, G; use_base_act, basis_func, normalizer),
     )
 
     display(mlp)
@@ -67,7 +75,7 @@ function main()
         @btime CUDA.@sync $kan($x, $pK, $stK)
     
         println("# BWD PASS")
-
+    
         @btime CUDA.@sync Zygote.gradient($f_mlp, $pM)
         @btime CUDA.@sync Zygote.gradient($f_kan, $pK)
     else
@@ -84,5 +92,6 @@ function main()
 
     nothing
 end
-
+#======================================================#
 main()
+#

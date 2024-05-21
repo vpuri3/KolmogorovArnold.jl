@@ -4,16 +4,16 @@
 #======================================================#
 
 @inline function rbf(x, z, h) # exp(-((x - z)/h)^2)
-    y = (x - z) * (1/h)
+    y = @. (x - z) * (1/h)
     _rbf(y)
 end
 
-@inline _rbf(x) = exp(-x^2)
+@inline _rbf(x) = @. exp(-x^2)
 
 function CRC.rrule(::typeof(_rbf), x)
     T = eltype(x)
     y = _rbf(x)
-    @inline ∇_rbf(ȳ) = -T(2) * x * y * ȳ
+    @inline ∇_rbf(ȳ) = CRC.NoTangent(), @fastmath(@. -T(2) * x * y * ȳ)
 
     y, ∇_rbf
 end
@@ -23,21 +23,20 @@ end
 #======================================================#
 
 @inline function rswaf(x, z, h)
-    y = (x - z) * (1/h)
+    y = @. (x - z) * (1/h)
     _rswaf(y)
 end
 
 @inline function _rswaf(x) # sech(x)^2
-    1 - tanh(x)^2
+    @. 1 - tanh(x)^2
 end
 
 function CRC.rrule(::typeof(_rswaf), x)
     T = eltype(x)
-    tx = tanh(x)
-    y = T(1) - tx^2
-    @inline ∇_rswaf(ȳ) = -T(2) * tx * y * ȳ
+    tx = @. tanh(x)
+    y = @. T(1) - tx^2
+    @inline ∇_rswaf(ȳ) = CRC.NoTangent(), @fastmath(@. -T(2) * tx * y * ȳ)
 
     y, ∇_rswaf
 end
-
 #

@@ -33,7 +33,7 @@ function KDense(
     #
     init_C = glorot_uniform,
     init_W = glorot_uniform,
-    use_fast_act::Bool = true,
+    allow_fast_activation::Bool = true,
 )
     T = promote_type(eltype.(grid_lims)...)
 
@@ -54,7 +54,7 @@ function KDense(
         denominator = grid_span / (grid_len - 1)
     end
 
-    if use_fast_act
+    if allow_fast_activation
         basis_func = NNlib.fast_act(basis_func)
         base_act = NNlib.fast_act(base_act)
         normalizer = NNlib.fast_act(normalizer)
@@ -113,11 +113,11 @@ function (l::KDense{use_base_act})(x::AbstractArray, p, st) where{use_base_act}
     x = reshape(x, l.in_dims, :)
     K = size(x, 2)
 
-    x_norm = l.normalizer.(x)                              # ∈ [-1, 1]
-    x_resh = reshape(x_norm, 1, :)                         # [1, K]
-    basis  = l.basis_func.(x_resh, st.grid, l.denominator) # [G, I * K]
-    basis  = reshape(basis, l.grid_len * l.in_dims, K)     # [G * I, K]
-    spline = p.C * basis                                   # [O, K]
+    x_norm = l.normalizer.(x)                             # ∈ [-1, 1]
+    x_resh = reshape(x_norm, 1, :)                        # [1, K]
+    basis  = l.basis_func(x_resh, st.grid, l.denominator) # [G, I * K]
+    basis  = reshape(basis, l.grid_len * l.in_dims, K)    # [G * I, K]
+    spline = p.C * basis                                  # [O, K]
 
     y = if use_base_act
         base = p.W * l.base_act.(x)
