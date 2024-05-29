@@ -26,7 +26,7 @@ function curve(
     d::Number,
     basis_func,
 )
-    vec(c' * basis_func.(x', z, d))
+    vec(c' * basis_func(x', z, d))
 end
 
 function plot_basis(N = 1000, G = 10)
