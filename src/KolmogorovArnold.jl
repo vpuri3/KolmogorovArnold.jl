@@ -12,9 +12,12 @@ using ChainRulesCore
 const CRC = ChainRulesCore
 
 include("utils.jl")
-export rbf, rswaf
+export rbf, rswaf, iqf
 
 include("kdense.jl")
 export KDense
+
+# include("explicit")
+# export GDense
 
 end # module
