@@ -28,42 +28,51 @@ device = Lux.gpu_device()
 function main()
     x = rand32(rng, 1, 1000) |> device
 
-    nM, nK, G =  32, 10, 10
-    nM, nK, G = 128, 40, 10
+    wM, wK, G = 128, 40, 10 # MLP width, KAN width, grid size
 
     mlp = Chain(
-        Dense(1, nM, tanh),
-        Dense(nM, nM, tanh),
-        Dense(nM, 1),
+        Dense(1, wM, tanh),
+        Dense(wM, wM, tanh),
+        Dense(wM, 1),
     )
 
-    use_base_act = false
-    basis_func = rbf # rbf, rswaf
-    normalizer = softsign
+    basis_func = rbf      # rbf, rswaf
+    normalizer = softsign # sigmoid(_fast), tanh(_fast), softsign
     
-    kan = Chain(
-        KDense( 1, nK, G; use_base_act, basis_func, normalizer),
-        KDense(nK, nK, G; use_base_act, basis_func, normalizer),
-        KDense(nK,  1, G; use_base_act, basis_func, normalizer),
+    kan1 = Chain(
+        KDense( 1, wK, G; use_base_act = true, basis_func, normalizer),
+        KDense(wK, wK, G; use_base_act = true, basis_func, normalizer),
+        KDense(wK,  1, G; use_base_act = true, basis_func, normalizer),
+    )
+
+    kan2 = Chain(
+        KDense( 1, wK, G; use_base_act = false, basis_func, normalizer),
+        KDense(wK, wK, G; use_base_act = false, basis_func, normalizer),
+        KDense(wK,  1, G; use_base_act = false, basis_func, normalizer),
     )
 
     display(mlp)
-    display(kan)
+    display(kan1)
+    display(kan2)
 
     pM, stM = Lux.setup(rng, mlp)
-    pK, stK = Lux.setup(rng, kan)
+    pK1, stK1 = Lux.setup(rng, kan1)
+    pK2, stK2 = Lux.setup(rng, kan2)
 
     pM = ComponentArray(pM) |> device
-    pK = ComponentArray(pK) |> device
+    pK1 = ComponentArray(pK1) |> device
+    pK2 = ComponentArray(pK2) |> device
 
-    stM, stK = device(stM), device(stK)
+    stM, stK1, stK2 = device(stM), device(stK1), device(stK2)
 
     f_mlp(p) = mlp(x, p, stM)[1] |> sum
-    f_kan(p) = kan(x, p, stK)[1] |> sum
+    f_kan1(p) = kan1(x, p, stK1)[1] |> sum
+    f_kan2(p) = kan2(x, p, stK2)[1] |> sum
 
     # # Zygote is type unstable - consider using generated functinos
     # _, pbM = Zygote.pullback(f_mlp, pM)
-    # _, pbK = Zygote.pullback(f_kan, pK)
+    # _, pbK1 = Zygote.pullback(f_kan1, pK)
+    # _, pbK2 = Zygote.pullback(f_kan2, pK)
 
     # @code_warntype pbM(x)
     # @code_warntype pbK(x)
@@ -72,22 +81,26 @@ function main()
         println("# FWD PASS")
     
         @btime CUDA.@sync $mlp($x, $pM, $stM)
-        @btime CUDA.@sync $kan($x, $pK, $stK)
+        @btime CUDA.@sync $kan1($x, $pK1, $stK1)
+        @btime CUDA.@sync $kan2($x, $pK2, $stK2)
     
         println("# BWD PASS")
     
         @btime CUDA.@sync Zygote.gradient($f_mlp, $pM)
-        @btime CUDA.@sync Zygote.gradient($f_kan, $pK)
+        @btime CUDA.@sync Zygote.gradient($f_kan1, $pK1)
+        @btime CUDA.@sync Zygote.gradient($f_kan2, $pK2)
     else
         println("# FWD PASS")
     
         @btime $mlp($x, $pM, $stM)
-        @btime $kan($x, $pK, $stK)
+        @btime $kan1($x, $pK1, $stK1)
+        @btime $kan2($x, $pK2, $stK2)
     
         println("# BWD PASS")
     
         @btime Zygote.gradient($f_mlp, $pM)
-        @btime Zygote.gradient($f_kan, $pK)
+        @btime Zygote.gradient($f_kan1, $pK1)
+        @btime Zygote.gradient($f_kan2, $pK2)
     end
 
     nothing

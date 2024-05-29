@@ -113,7 +113,7 @@ function (l::KDense{use_base_act})(x::AbstractArray, p, st) where{use_base_act}
     x = reshape(x, l.in_dims, :)
     K = size(x, 2)
 
-    x_norm = l.normalizer.(x)                             # ∈ [-1, 1]
+    x_norm = _broadcast(l.normalizer, x)                  # ∈ [-1, 1]
     x_resh = reshape(x_norm, 1, :)                        # [1, K]
     basis  = l.basis_func(x_resh, st.grid, l.denominator) # [G, I * K]
     basis  = reshape(basis, l.grid_len * l.in_dims, K)    # [G * I, K]

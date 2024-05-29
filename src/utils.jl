@@ -1,10 +1,12 @@
 #
+@inline _broadcast(f, args...) = @. f(args...)
+
 #======================================================#
 # Radial basis functions (RBF)
 #======================================================#
 
 @inline function rbf(x, z, h) # exp(-((x - z)/h)^2)
-    y = @. (x - z) * (1/h)
+    y = (x - z) * (1/h)
     _rbf(y)
 end
 
