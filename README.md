@@ -69,7 +69,7 @@ This package will be actively developed for the time-being.
 Once a stable version is figured out, we can consider opening a PR on [`Lux.jl`](https://github.com/LuxDL/Lux.jl).
 Feel fre to open issues or create PRs in the meantime with features, comparisons, or performance improvements.
 
-# TODO:
+## TODO
 - Grid update with linear least sq solve
 - devise good initialization schemes. RBF coefficients and base activation weights are currently initialized with `WeightInitializers.glorot_uniform`.
 - figure out what are good optimization strategies (choice of optimizer, learning rate decay, etc)
