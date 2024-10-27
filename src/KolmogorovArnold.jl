@@ -20,6 +20,9 @@ export KDense
 include("fdense.jl")
 export FDense
 
+include("cdense.jl")
+export CDense
+
 # include("explicit")
 # export GDense
 
