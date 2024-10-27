@@ -4,4 +4,5 @@
 
 
 Implementation of [Kolmogorov-Arnold network with radial basis functions](https://github.com/vpuri3/KolmogorovArnold.jl)
-Implementation of FourierKAN based on [FourierKAN](https://github.com/GistNoesis/FourierKAN)
+
+Julia implementation of [FourierKAN](https://github.com/GistNoesis/FourierKAN)
