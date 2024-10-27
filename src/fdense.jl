@@ -28,7 +28,7 @@ function FDense(
     # Grid normalization factor
     grid_norm_factor = smooth_initialization ? ((1:gridsize).^2) : sqrt(gridsize)
     
-    FDense{addbias}(inputdim, outdim, gridsize, init, grid_norm_factor)
+    return FDense{addbias}(inputdim, outdim, gridsize, init, grid_norm_factor)
 end
 
 # Initialize parameters for the layer
@@ -39,7 +39,7 @@ function LuxCore.initialparameters(rng::AbstractRNG, l::FDense{addbias}) where {
         p = (; p..., bias = zeros(Float32, 1, l.outdim))
     end
 
-    p
+    return p
 end
 
 # Compute the number of parameters
@@ -50,7 +50,7 @@ function LuxCore.parameterlength(l::FDense{addbias}) where {addbias}
         length += l.outdim
     end
 
-    length
+    return length
 end
 
 
@@ -89,5 +89,5 @@ function (l::FDense{addbias})(x::AbstractArray, p, st) where {addbias}
     #println("size ybias : ", size(y))
 
     # Reshape output to expected output shape
-    reshape(y, outshape), st
+    return reshape(y, outshape), st
 end

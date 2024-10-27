@@ -8,11 +8,14 @@ using LuxCore
 using WeightInitializers
 using ConcreteStructs
 
+using cuTENSOR, CUDA
+using TensorOperations
+
 using ChainRulesCore
 const CRC = ChainRulesCore
 
 include("utils.jl")
-export rbf, rswaf, iqf
+export rbf, rswaf, iqf, batched_mul
 
 include("kdense.jl")
 export KDense

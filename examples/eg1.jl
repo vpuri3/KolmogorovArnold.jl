@@ -26,9 +26,9 @@ device = Lux.gpu_device()
 
 #======================================================#
 function main()
-    x = rand32(rng, 1, 1000) |> device
-
-    wM, wK, G = 128, 40, 10 # MLP width, KAN width, grid size
+    x = rand32(rng, 1, 100) |> device
+    x₀ = rand32(rng, 100, 1) |> device
+    wM, wK, G = 10, 5, 10 # MLP width, KAN width, grid size
 
     mlp = Chain(
         Dense(1, wM, tanh),
@@ -51,23 +51,44 @@ function main()
         KDense(wK,  1, G; use_base_act = false, basis_func, normalizer),
     )
 
+    kan3 = Chain(
+        CDense( 1, wK, G),
+        CDense(wK, wK, G),
+        CDense(wK,  1, G),
+    )
+
+    kan4 = Chain(
+        FDense( 1, wK, G),
+        FDense(wK, wK, G),
+        FDense(wK,  1, G),
+    )
+
     display(mlp)
     display(kan1)
     display(kan2)
-
+    display(kan3)
+    display(kan4
+    )
     pM, stM = Lux.setup(rng, mlp)
     pK1, stK1 = Lux.setup(rng, kan1)
     pK2, stK2 = Lux.setup(rng, kan2)
+    pK3, stK3 = Lux.setup(rng, kan3)
+    pK4, stK4 = Lux.setup(rng, kan4)
 
-    pM = ComponentArray(pM) |> device
+
+    pM  = ComponentArray(pM) |> device
     pK1 = ComponentArray(pK1) |> device
     pK2 = ComponentArray(pK2) |> device
+    pK3 = ComponentArray(pK3) |> device
+    pK4 = ComponentArray(pK4) |> device
 
-    stM, stK1, stK2 = device(stM), device(stK1), device(stK2)
+    stM, stK1, stK2, stK3, stK4 = device(stM), device(stK1), device(stK2), device(stK4), device(stK4)
 
-    f_mlp(p) = mlp(x, p, stM)[1] |> sum
+    f_mlp(p)  = mlp(x, p, stM)[1] |> sum
     f_kan1(p) = kan1(x, p, stK1)[1] |> sum
     f_kan2(p) = kan2(x, p, stK2)[1] |> sum
+    f_kan3(p) = kan3(x₀, p, stK3)[1] |> sum
+    f_kan4(p) = kan4(x₀, p, stK4)[1] |> sum
 
     # # Zygote is type unstable - consider using generated functinos
     # _, pbM = Zygote.pullback(f_mlp, pM)
@@ -83,24 +104,31 @@ function main()
         @btime CUDA.@sync $mlp($x, $pM, $stM)
         @btime CUDA.@sync $kan1($x, $pK1, $stK1)
         @btime CUDA.@sync $kan2($x, $pK2, $stK2)
-    
+        @btime CUDA.@sync $kan3($x₀, $pK3, $stK4)
+        @btime CUDA.@sync $kan4($x₀, $pK4, $stK4)
+
         println("# BWD PASS")
     
         @btime CUDA.@sync Zygote.gradient($f_mlp, $pM)
         @btime CUDA.@sync Zygote.gradient($f_kan1, $pK1)
         @btime CUDA.@sync Zygote.gradient($f_kan2, $pK2)
+        @btime CUDA.@sync Zygote.gradient($f_kan3, $pK3)
+        @btime CUDA.@sync Zygote.gradient($f_kan4, $pK4)
     else
         println("# FWD PASS")
     
         @btime $mlp($x, $pM, $stM)
         @btime $kan1($x, $pK1, $stK1)
         @btime $kan2($x, $pK2, $stK2)
-    
+        @btime $kan1($x₀, $pK3, $stK3)
+        @btime $kan2($x₀, $pK4, $stK4) 
         println("# BWD PASS")
     
         @btime Zygote.gradient($f_mlp, $pM)
         @btime Zygote.gradient($f_kan1, $pK1)
         @btime Zygote.gradient($f_kan2, $pK2)
+        @btime Zygote.gradient($f_kan3, $pK3)
+        @btime Zygote.gradient($f_kan4, $pK4)
     end
 
     nothing

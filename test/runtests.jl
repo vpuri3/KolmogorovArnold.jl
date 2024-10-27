@@ -1,53 +1,92 @@
 using KolmogorovArnold
 using Test
-using Lux, Zygote, Random, Statistics, Plots
-using Optimisers, OptimizationOptimJL
+using Lux, Zygote, Random, Statistics, Plots, CUDA, LuxCUDA, ComponentArrays
+using Optimisers, OptimizationOptimJL, LuxDeviceUtils
+
+pkgpath = dirname(dirname(pathof(KolmogorovArnold)))
 
 # Write your tests here.
 
+@testset "FunctionFit" begin
 
-@testset "FunctionFit.jl" begin
+    cpud = cpu_device()
+    gpud = gpu_device()
+    rng  = Random.default_rng()
 
-    rng = Random.default_rng()
+    """
+    Fits the model to the curve and returns the 
+    """
+    function fit(name, model, device, i_shape, i_d)
+        
+        x₀ = sort!(rand(Float32, i_shape...), dims=i_d) 
+        yₜ = cos.(π .* x₀) .+ sin.(4 .* π .* x₀) .* tanh.(x₀) .+ x₀.^4 
+        x₀ = x₀ |> device
+        yₜ = yₜ |> device
 
-    x₀ = rand(Float32, 50, 1)
-    sort!(x₀, dims=1)
-    yₜ = cos.(π .* x₀) .+ sin.(4 .* π .* x₀) .* tanh.(x₀) .+ x₀ .^ 4
+        # Initiate model
+        parameters, layer_states = Lux.setup(rng, model)
+        parameters = ComponentArray(parameters) |> device
+        layer_states = layer_states |> device
 
+        # Initial Prediction
+        yᵢ, layer_states = model(x₀, parameters, layer_states)
 
-    model = Chain(CDense(1, 10, 10), CDense(10, 1, 10))
-    parameters, layer_states = Lux.setup(rng, model)
+        # Set up the optimizer
+        opt_state = Optimisers.setup(Optimisers.Adam(0.0003), parameters)
 
-    y_init, layer_states = model(x₀, parameters, layer_states)
-
-    # Define the loss function
-    function loss_fn(pa, ls)
-        yₚ, new_ls = model(x₀, pa, ls)
-        l = mean((yₚ .- yₜ).^2)
-        return l, new_ls
-    end
-
-    # Set up the optimizer
-    opt = Descent(0.01)
-    opt_state = Optimisers.setup(opt, parameters)
-
-    for epoch in 1:10000
-        (loss, layer_states), back = pullback(loss_fn, parameters, layer_states)
-        grad, _ = back((1.0, nothing))
-        opt_state, parameters = Optimisers.update(opt_state, parameters, grad)
-        if epoch % 1000 == 0
-            println("Epoch: $epoch, Loss: $loss")
+        # Define the loss function
+        function loss_fn(pa, ls)
+            yₚ, new_ls = model(x₀, pa, ls)
+            l = mean((yₚ .- yₜ).^2)
+            return l, new_ls
         end
+
+        for epoch in 1:20000
+            (loss, layer_states), back = pullback(loss_fn, parameters, layer_states)
+            grad, _ = back((1.0, nothing))
+            grad = map(g -> clamp(g, -3, 3), grad)
+            opt_state, parameters = Optimisers.update(opt_state, parameters, grad)
+
+            #if epoch % 1000 == 0
+            #    println("Epoch: $epoch, Loss: $loss")
+            #end
+        end
+
+        # Getting the final evaluatin for the test
+        yₑ, layer_states = model(x₀, parameters, layer_states)
+
+        # Getting the final loss
+        l, _ = loss_fn(parameters, layer_states)
+
+        # Plotting the truth and the initial / final predictions
+        x₀ = vec(x₀) |> cpud
+        yᵢ = vec(yᵢ) |> cpud
+        yₑ = vec(yₑ) |> cpud
+        yₜ = vec(yₜ) |> cpud
+
+        plot(x₀, yₜ, label="truth", color="red")
+        plot!(x₀, yᵢ, label="inita approx", color="blue")
+        plot!(x₀, yₑ, label="final approx", color="green")
+        scatter!(x₀, yₜ, color="red", label=false)
+        scatter!(x₀, yᵢ, color="blue", label=false)
+        scatter!(x₀, yₑ, color="green", label=false)
+        savefig("$name.png")
+
+        return l |> cpud
     end
 
-    y_last, layer_states = model(x₀, parameters, layer_states)
+    @test fit("fKAN_cpu", Chain(FDense(1, 10, 10), FDense(10, 1, 10)), cpud, (50, 1), 1) < 1e-3
+    @test fit("cKAN_cpu", Chain(CDense(1, 20, 50), CDense(20, 1, 50)), cpud, (50, 1), 1) < 1e-3
+    @test fit("rKAN_cpu", Chain(KDense(1, 10, 10), KDense(10, 1, 10)), cpud, (1, 50), 2) < 1e-3
+    @test fit("fKAN_gpu", Chain(FDense(1, 10, 10), FDense(10, 1, 10)), gpud, (50, 1), 1) < 1e-3
+    @test fit("cKAN_gpu", Chain(CDense(1, 20, 50), CDense(20, 1, 50)), gpud, (50, 1), 1) < 1e-3
+    @test fit("rKAN_gpu", Chain(KDense(1, 10, 10), KDense(10, 1, 10)), gpud, (1, 50), 2) < 1e-3
 
 
-    p = plot(x₀, yₜ, label="truth", color="red")
-    plot!(x₀, y_init, label="inita approx", color="blue")
-    plot!(x₀, y_last, label="final approx", color="green")
-    scatter!(x₀, yₜ, color="red")
-    scatter!(x₀, y_init, color="blue")
-    scatter!(x₀, y_last, color="green")
-    savefig(p, "p.png")
 end
+
+
+@testset "Speedtest" begin
+    include(joinpath(pkgpath, "examples", "eg1.jl"))
+end
+

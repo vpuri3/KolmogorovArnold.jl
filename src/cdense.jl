@@ -2,12 +2,12 @@
 #======================================================================#
 # Kolmogorov-Arnold Layer with chebyshev polynomials as basis functions
 #======================================================================#
-struct CDense <: LuxCore.AbstractExplicitLayer
+@concrete struct CDense{addbias}  <: LuxCore.AbstractExplicitLayer
     inputdim::Int
     outdim::Int
     degree::Int
     #
-    init::Function
+    init
 end
 
 # Constructor
@@ -15,35 +15,43 @@ function CDense(
     inputdim::Int, 
     outdim::Int, 
     degree::Int,
-    init::Function = glorot_uniform)
+    init::Function = glorot_uniform,
+    add_bias = true)
 
-    CDense(inputdim, outdim, degree, init)
+    CDense{add_bias}(inputdim, outdim, degree, init)
 end
 
 
 # Initialize parameters for the layer
-function LuxCore.initialparameters(rng::AbstractRNG, l::CDense)
-    p = (; C = l.init(rng, Float32, l.inputdim, l.outdim, l.degree + 1) .* (1 / (l.inputdim * (l.degree + 1))))
-    p = (p..., W = collect(Float32, 0:l.degree))
-    p
+function LuxCore.initialparameters(rng::AbstractRNG, l::CDense{add_bias}) where {add_bias}
+    C = l.init(rng, Float32, l.inputdim, l.outdim, l.degree + 1) .* (1 / (l.inputdim * (l.degree + 1)))
+    W = collect(Float32, 0:l.degree)
+    p = (C = C, W = W)
+    if add_bias
+        B = zeros(Float32, 1)
+        p = (p..., B = B)
+    end
+
+    return p
 end
 
 
 # Forward pass
-function (l::CDense)(x::AbstractArray, p, st)
+function (l::CDense{add_bias})(x::AbstractArray, p, st) where {add_bias}
 
-    x = tanh.(x)                        # Apply tanh to normalize x to [-1, 1]
+    x = tanh.(x)
+    x = reshape(x, :, l.inputdim, 1)
+    x = repeat(x, 1, 1, l.degree + 1)
 
-    x = reshape(x, :, l.inputdim, 1)    # Shape: (batch_size, inputdim, 1)
-    x = repeat(x, 1, 1, l.degree + 1)   # Expand: (batch_size, inputdim, degree + 1)
-    
-    x = acos.(x)                        # Apply acos
-    x .= x .* p.W                       # Multiply by arange [0 .. degree]
-    x = cos.(x)                         # Apply cos
+    x = acos.(x)
+    x = x .+ reshape(p.W, 1, 1, :)
+    x = cos.(x)
 
-    # Compute Chebyshev interpolation using einsum equivalent (batched multiplication)
     y = batched_mul(x, p.C)  # Equivalent to einsum "bid,iod->bo"
 
-    # Flatten the result to have shape (batch_size, outdim)
+    if add_bias
+        y = y .+ p.B
+    end
+
     return reshape(y, :, l.outdim), st
 end
