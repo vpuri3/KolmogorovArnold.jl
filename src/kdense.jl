@@ -1,6 +1,6 @@
 #
 #======================================================#
-# Kolmogorov-Arnold Layer
+# Kolmogorov-Arnold Layer with rbf basis functions
 #======================================================#
 @concrete struct KDense{use_base_act} <: LuxCore.AbstractExplicitLayer
     in_dims::Int

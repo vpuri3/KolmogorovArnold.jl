@@ -17,6 +17,9 @@ export rbf, rswaf, iqf
 include("kdense.jl")
 export KDense
 
+include("fdense.jl")
+export FDense
+
 # include("explicit")
 # export GDense
 
