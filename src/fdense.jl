@@ -70,23 +70,12 @@ function (l::FDense{addbias})(x::AbstractArray, p, st) where {addbias}
 
     # Compute the Fourier interpolations for each input dimension
     y = sum(c .* p.fouriercoeffs[1:1, :, :, :], dims = (3, 4)) + sum(s .* p.fouriercoeffs[2:2, :, :, :], dims = (3, 4))
-    
     y = dropdims(y, dims=(3, 4)) 
 
-
-
     # Add bias if needed
-    if addbias
-        y = y .+ p.bias
+    y = if addbias
+        y .+ p.bias
     end
-
-    #println("size x     : ", size(x))
-    #println("size k     : ", size(k))
-    #println("size xrshp : ", size(xrshp))
-    #println("size c     : ", size(c))
-    #println("size s     : ", size(s))
-    #println("size y     : ", size(y))
-    #println("size ybias : ", size(y))
 
     # Reshape output to expected output shape
     return reshape(y, outshape), st
