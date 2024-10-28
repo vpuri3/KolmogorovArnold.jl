@@ -63,12 +63,14 @@ function CRC.rrule(::typeof(_iqf), x)
     y, ∇_iqf
 end
 
+#======================================================#
+# Batched Multiplication using Einstein Summation
+#======================================================#
 
-# Helper function for batched multiplication using Einstein summation
 @inline function batched_mul(x, coeffs)
     result = similar(coeffs, size(x, 1), size(coeffs, 2))
     @tensor begin
         result[i, j] = x[i, 1, k] * coeffs[1, j, k]
     end
-    return result
+    result
 end

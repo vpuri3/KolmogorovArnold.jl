@@ -41,22 +41,19 @@ pkgpath = dirname(dirname(pathof(KolmogorovArnold)))
             return l, new_ls
         end
 
-        for epoch in 1:20000
+        loss = 10.0f32
+        epoch = 0
+        while loss > 1e-4
             (loss, layer_states), back = pullback(loss_fn, parameters, layer_states)
             grad, _ = back((1.0, nothing))
             grad = map(g -> clamp(g, -3, 3), grad)
             opt_state, parameters = Optimisers.update(opt_state, parameters, grad)
-
-            #if epoch % 1000 == 0
-            #    println("Epoch: $epoch, Loss: $loss")
-            #end
+            print("\rName: $name - Epoch: $epoch, Loss: $loss")
+            epoch += 1
         end
-
+        println()
         # Getting the final evaluatin for the test
         yₑ, layer_states = model(x₀, parameters, layer_states)
-
-        # Getting the final loss
-        l, _ = loss_fn(parameters, layer_states)
 
         # Plotting the truth and the initial / final predictions
         x₀ = vec(x₀) |> cpud
@@ -72,7 +69,7 @@ pkgpath = dirname(dirname(pathof(KolmogorovArnold)))
         scatter!(x₀, yₑ, color="green", label=false)
         savefig("$name.png")
 
-        return l |> cpud
+        return loss |> cpud
     end
 
     @test fit("fKAN_cpu", Chain(FDense(1, 10, 10), FDense(10, 1, 10)), cpud, (50, 1), 1) < 1e-3
@@ -81,7 +78,6 @@ pkgpath = dirname(dirname(pathof(KolmogorovArnold)))
     @test fit("fKAN_gpu", Chain(FDense(1, 10, 10), FDense(10, 1, 10)), gpud, (50, 1), 1) < 1e-3
     @test fit("cKAN_gpu", Chain(CDense(1, 20, 50), CDense(20, 1, 50)), gpud, (50, 1), 1) < 1e-3
     @test fit("rKAN_gpu", Chain(KDense(1, 10, 10), KDense(10, 1, 10)), gpud, (1, 50), 2) < 1e-3
-
 
 end
 

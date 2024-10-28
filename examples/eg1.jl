@@ -28,7 +28,8 @@ device = Lux.gpu_device()
 function main()
     x = rand32(rng, 1, 100) |> device
     x₀ = rand32(rng, 100, 1) |> device
-    wM, wK, G = 10, 5, 10 # MLP width, KAN width, grid size
+
+    wM, wK, G = 128, 40, 10 # MLP width, KAN width, grid size
 
     mlp = Chain(
         Dense(1, wM, tanh),

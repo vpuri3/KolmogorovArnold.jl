@@ -16,42 +16,51 @@ function CDense(
     outdim::Int, 
     degree::Int,
     init::Function = glorot_uniform,
-    add_bias = true)
+    addbias = true)
 
-    CDense{add_bias}(inputdim, outdim, degree, init)
+    CDense{addbias}(inputdim, outdim, degree, init)
 end
 
 
 # Initialize parameters for the layer
-function LuxCore.initialparameters(rng::AbstractRNG, l::CDense{add_bias}) where {add_bias}
-    C = l.init(rng, Float32, l.inputdim, l.outdim, l.degree + 1) .* (1 / (l.inputdim * (l.degree + 1)))
-    W = collect(Float32, 0:l.degree)
-    p = (C = C, W = W)
-    if add_bias
-        B = zeros(Float32, 1)
+function LuxCore.initialparameters(rng::AbstractRNG, l::CDense{addbias}) where {addbias}
+    chebycoeffs = l.init(rng, Float32, l.inputdim, l.outdim, l.degree + 1) .* (1 / (l.inputdim * (l.degree + 1)))
+    arange = collect(Float32, 0:l.degree)
+    p = (chebycoeffs = chebycoeffs, arange = arange)
+    if addbias
+        B = zeros(Float32, 1, l.outdim)
         p = (p..., B = B)
     end
+    p
+end
 
-    return p
+# Compute the number of parameters
+function LuxCore.parameterlength(l::CDense{addbias}) where {addbias}
+    length = l.outdim * l.inputdim * (l.degree + 1)
+    if addbias
+        length += l.outdim
+    end
+    length
 end
 
 
 # Forward pass
-function (l::CDense{add_bias})(x::AbstractArray, p, st) where {add_bias}
+function (l::CDense{addbias})(x::AbstractArray, p, st) where {addbias}
 
     x = tanh.(x)
     x = reshape(x, :, l.inputdim, 1)
     x = repeat(x, 1, 1, l.degree + 1)
 
     x = acos.(x)
-    x = x .+ reshape(p.W, 1, 1, :)
+    x = x .+ reshape(p.arange, 1, 1, :)
     x = cos.(x)
 
-    y = batched_mul(x, p.C)  # Equivalent to einsum "bid,iod->bo"
+    y = batched_mul(x, p.chebycoeffs)  # Equivalent to einsum "bid,iod->bo"
 
-    if add_bias
+
+    if addbias
         y = y .+ p.B
     end
 
-    return reshape(y, :, l.outdim), st
+    reshape(y, :, l.outdim), st
 end
