@@ -59,8 +59,8 @@ function (l::CDense{addbias})(x::AbstractArray, p, st) where {addbias}
 
     y = batched_mul(x, p.chebycoeffs)  # Equivalent to einsum "bid,iod->bo"
 
-    y = if addbias
-        y .+ p.B
+    if addbias
+        y = y .+ p.B
     end
 
     reshape(y, :, l.outdim), st

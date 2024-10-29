@@ -73,8 +73,8 @@ function (l::FDense{addbias})(x::AbstractArray, p, st) where {addbias}
     y = dropdims(y, dims=(3, 4)) 
 
     # Add bias if needed
-    y = if addbias
-        y .+ p.bias
+    if addbias
+        y = y .+ p.bias
     end
 
     # Reshape output to expected output shape

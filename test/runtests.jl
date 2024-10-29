@@ -5,6 +5,19 @@ using Optimisers, OptimizationOptimJL, LuxDeviceUtils
 
 pkgpath = dirname(dirname(pathof(KolmogorovArnold)))
 
+# Write your tests here.
+
+
+@testset "MixedLayers" begin
+    rng  = Random.default_rng()
+    model = Chain(FDense(1, 10, 10), KDense(10, 1, 10), CDense(10, 1, 50))
+    parameters, layer_states = Lux.setup(rng, model)
+
+    @test model isa Chain
+
+end
+
+
 @testset "FunctionFit" begin
 
     cpud = cpu_device()
@@ -72,10 +85,12 @@ pkgpath = dirname(dirname(pathof(KolmogorovArnold)))
     @test fit("fKAN_cpu", Chain(FDense(1, 10, 10), FDense(10, 1, 10)), cpud, (50, 1), 1) <= 2e4
     @test fit("cKAN_cpu", Chain(CDense(1, 20, 50), CDense(20, 1, 50)), cpud, (50, 1), 1) <= 2e4
     @test fit("rKAN_cpu", Chain(KDense(1, 10, 10), KDense(10, 1, 10)), cpud, (1, 50), 2) <= 2e4
-    @test fit("fKAN_gpu", Chain(FDense(1, 10, 10), FDense(10, 1, 10)), gpud, (50, 1), 1) <= 2e4
-    @test fit("cKAN_gpu", Chain(CDense(1, 20, 50), CDense(20, 1, 50)), gpud, (50, 1), 1) <= 2e4
-    @test fit("rKAN_gpu", Chain(KDense(1, 10, 10), KDense(10, 1, 10)), gpud, (1, 50), 2) <= 2e4
 
+    if gpud isa LuxDeviceUtils.AbstractLuxGPUDevice
+        @test fit("fKAN_gpu", Chain(FDense(1, 10, 10), FDense(10, 1, 10)), gpud, (50, 1), 1) <= 2e4
+        @test fit("cKAN_gpu", Chain(CDense(1, 20, 50), CDense(20, 1, 50)), gpud, (50, 1), 1) <= 2e4
+        @test fit("rKAN_gpu", Chain(KDense(1, 10, 10), KDense(10, 1, 10)), gpud, (1, 50), 2) <= 2e4
+    end
 end
 
 @testset "Speedtest" begin
