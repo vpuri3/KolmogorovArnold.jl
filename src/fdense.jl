@@ -2,7 +2,7 @@
 #======================================================#
 # Kolmogorov-Arnold Layer with fourier basis functions
 #======================================================#
-@concrete struct FDense{addbias} <: LuxCore.AbstractExplicitLayer
+@concrete struct FDense{addbias} <: LuxCore.AbstractLuxLayer
     inputdim::Int
     outdim::Int
     gridsize::Int

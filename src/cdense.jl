@@ -2,7 +2,7 @@
 #======================================================================#
 # Kolmogorov-Arnold Layer with chebyshev polynomials as basis functions
 #======================================================================#
-@concrete struct CDense{addbias}  <: LuxCore.AbstractExplicitLayer
+@concrete struct CDense{addbias}  <: LuxCore.AbstractLuxLayer
     inputdim::Int
     outdim::Int
     degree::Int

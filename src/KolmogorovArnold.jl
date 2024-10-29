@@ -8,7 +8,6 @@ using LuxCore
 using WeightInitializers
 using ConcreteStructs
 
-using CUDA
 using TensorOperations
 
 using ChainRulesCore
