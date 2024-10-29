@@ -1,6 +1,5 @@
 #
 using KolmogorovArnold
-using Random, LinearAlgebra
 
 # Add test dependencies to env stack
 let 
@@ -9,8 +8,9 @@ let
     !(tstpath in LOAD_PATH) && push!(LOAD_PATH, tstpath)
 end
 
+using Random, LinearAlgebra
 using Plots, NNlib, Zygote, BenchmarkTools
-using LuxDeviceUtils, CUDA, LuxCUDA
+using MLDataDevices, CUDA, LuxCUDA
 
 # configure BLAS
 ncores = min(Sys.CPU_THREADS, length(Sys.cpu_info()))

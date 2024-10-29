@@ -1,7 +1,7 @@
 module KolmogorovArnold
 
-using Random
 using LinearAlgebra
+using Random: AbstractRNG
 
 using NNlib
 using LuxCore

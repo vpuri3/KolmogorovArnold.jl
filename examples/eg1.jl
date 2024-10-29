@@ -1,6 +1,5 @@
 #
 using KolmogorovArnold
-using Random, LinearAlgebra
 
 # Add test dependencies to env stack
 let 
@@ -9,8 +8,9 @@ let
     !(tstpath in LOAD_PATH) && push!(LOAD_PATH, tstpath)
 end
 
+using Random, LinearAlgebra
 using Zygote, Lux, ComponentArrays
-using LuxDeviceUtils, CUDA, LuxCUDA
+using MLDataDevices, CUDA, LuxCUDA
 using BenchmarkTools
 
 # configure BLAS
@@ -77,7 +77,7 @@ function main()
     # @code_warntype pbM(x)
     # @code_warntype pbK(x)
 
-    if device isa LuxDeviceUtils.AbstractLuxGPUDevice
+    if device isa MLDataDevices.AbstractGPUDevice
         println("# FWD PASS")
     
         @btime CUDA.@sync $mlp($x, $pM, $stM)

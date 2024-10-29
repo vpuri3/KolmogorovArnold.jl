@@ -2,7 +2,7 @@
 #======================================================#
 # Kolmogorov-Arnold Layer
 #======================================================#
-@concrete struct KDense{use_base_act} <: LuxCore.AbstractExplicitLayer
+@concrete struct KDense{use_base_act} <: LuxCore.AbstractLuxLayer
     in_dims::Int
     out_dims::Int
     grid_len::Int

@@ -1,9 +1,6 @@
 using KolmogorovArnold
 using Test
 
-using Lux, Zygote
-using Optimisers, OptimizationOptimJL
-
 pkgpath = dirname(dirname(pathof(KolmogorovArnold)))
 
 @testset "KolmogorovArnold.jl" begin
