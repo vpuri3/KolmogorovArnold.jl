@@ -2,6 +2,7 @@ using KolmogorovArnold
 using MLDataDevices
 using Lux, Zygote, Random, Statistics, Plots, CUDA, LuxCUDA, ComponentArrays
 using Optimisers, OptimizationOptimJL
+using cuTENSOR
 
 cpud = cpu_device()
 gpud = gpu_device()
