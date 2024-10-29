@@ -1,10 +1,9 @@
 name = "KolmogorovArnold"
 uuid = "eec8b66d-f71a-4a43-b228-0fe5d6721cd3"
 authors = ["Vedant Puri <vedantpuri@gmail.com> and contributors"]
-version = "1.0.0-DEV"
+version = "0.0.1"
 
 [deps]
-CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -21,17 +20,11 @@ TensorOperations = "5.1.0"
 Test = "1.11.0"
 Zygote = "0.6.72"
 cuTENSOR = "2.2.0"
+LuxCore = "1"
 julia = "1.6"
 
 [extras]
-Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
-LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
-LuxDeviceUtils = "34f89e08-e1d5-43b4-8944-0b49ac560553"
-Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
-OptimizationOptimJL = "36348300-93cb-4f02-beb5-3c3902f8871e"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
-cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [targets]
-test = ["Test", "Lux", "Zygote", "Optimisers", "OptimizationOptimJL"]
+test = ["Test", "Random"]

@@ -5,8 +5,6 @@ using Optimisers, OptimizationOptimJL, LuxDeviceUtils
 
 pkgpath = dirname(dirname(pathof(KolmogorovArnold)))
 
-# Write your tests here.
-
 @testset "FunctionFit" begin
 
     cpud = cpu_device()
@@ -79,7 +77,6 @@ pkgpath = dirname(dirname(pathof(KolmogorovArnold)))
     @test fit("rKAN_gpu", Chain(KDense(1, 10, 10), KDense(10, 1, 10)), gpud, (1, 50), 2) <= 2e4
 
 end
-
 
 @testset "Speedtest" begin
     include(joinpath(pkgpath, "examples", "eg1.jl"))
