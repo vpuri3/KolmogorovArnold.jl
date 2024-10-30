@@ -26,10 +26,10 @@ device = Lux.gpu_device()
 
 #======================================================#
 function main()
-    x = rand32(rng, 1, 100) |> device
-    x₀ = rand32(rng, 100, 1) |> device
+    x  = rand32(rng, 1, 1000) |> device
+    x₀ = rand32(rng, 1000, 1) |> device
 
-    wM, wK, G = 128, 40, 10 # MLP width, KAN width, grid size
+    wM, wK, wK2, G = 128, 40, 30, 10 # MLP width, KAN width, grid size
 
     mlp = Chain(
         Dense(1, wM, tanh),
@@ -59,17 +59,17 @@ function main()
     )
 
     kan4 = Chain(
-        FDense( 1, wK, G),
-        FDense(wK, wK, G),
-        FDense(wK,  1, G),
+        FDense( 1, wK2, G),
+        FDense(wK2, wK2, G),
+        FDense(wK2,  1, G),
     )
 
     display(mlp)
     display(kan1)
     display(kan2)
     display(kan3)
-    display(kan4
-    )
+    display(kan4)
+
     pM, stM = Lux.setup(rng, mlp)
     pK1, stK1 = Lux.setup(rng, kan1)
     pK2, stK2 = Lux.setup(rng, kan2)
@@ -105,7 +105,7 @@ function main()
         @btime CUDA.@sync $mlp($x, $pM, $stM)
         @btime CUDA.@sync $kan1($x, $pK1, $stK1)
         @btime CUDA.@sync $kan2($x, $pK2, $stK2)
-        @btime CUDA.@sync $kan3($x₀, $pK3, $stK4)
+        @btime CUDA.@sync $kan3($x₀, $pK3, $stK3)
         @btime CUDA.@sync $kan4($x₀, $pK4, $stK4)
 
         println("# BWD PASS")
