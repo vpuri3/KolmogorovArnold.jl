@@ -11,6 +11,6 @@ end
 
 
 @testset "FunctionFit" begin
-    #include(joinpath(pkgpath, "examples", "eg4.jl"))
+    include(joinpath(pkgpath, "examples", "eg4.jl"))
 end
 

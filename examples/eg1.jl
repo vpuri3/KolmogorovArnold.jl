@@ -25,9 +25,9 @@ Random.seed!(rng, 0)
 device = Lux.gpu_device()
 
 #======================================================#
-function main()
-    x  = rand32(rng, 1, 1000) |> device
-    x₀ = rand32(rng, 1000, 1) |> device
+function main(N=1000)
+    x  = rand32(rng, 1, N) |> device
+    x₀ = rand32(rng, N, 1) |> device
 
     wM, wK, wK2, G = 128, 40, 30, 10 # MLP width, KAN width, grid size
 
@@ -109,7 +109,7 @@ function main()
         @btime CUDA.@sync $kan4($x₀, $pK4, $stK4)
 
         println("# BWD PASS")
-    
+
         @btime CUDA.@sync Zygote.gradient($f_mlp, $pM)
         @btime CUDA.@sync Zygote.gradient($f_kan1, $pK1)
         @btime CUDA.@sync Zygote.gradient($f_kan2, $pK2)
@@ -117,14 +117,15 @@ function main()
         @btime CUDA.@sync Zygote.gradient($f_kan4, $pK4)
     else
         println("# FWD PASS")
-    
+
         @btime $mlp($x, $pM, $stM)
         @btime $kan1($x, $pK1, $stK1)
         @btime $kan2($x, $pK2, $stK2)
-        @btime $kan1($x₀, $pK3, $stK3)
-        @btime $kan2($x₀, $pK4, $stK4) 
+        @btime $kan3($x₀, $pK3, $stK3)
+        @btime $kan4($x₀, $pK4, $stK4) 
+
         println("# BWD PASS")
-    
+
         @btime Zygote.gradient($f_mlp, $pM)
         @btime Zygote.gradient($f_kan1, $pK1)
         @btime Zygote.gradient($f_kan2, $pK2)
