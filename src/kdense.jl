@@ -1,6 +1,6 @@
 #
 #======================================================#
-# Kolmogorov-Arnold Layer
+# Kolmogorov-Arnold Layer with rbf basis functions
 #======================================================#
 @concrete struct KDense{use_base_act} <: LuxCore.AbstractLuxLayer
     in_dims::Int
@@ -60,11 +60,7 @@ function KDense(
         normalizer = NNlib.fast_act(normalizer)
     end
 
-    KDense{use_base_act}(
-        in_dims, out_dims, grid_len,
-        normalizer, T.(grid_lims), T(denominator),
-        basis_func, base_act, init_C, init_W,
-    )
+    return KDense{use_base_act}(in_dims, out_dims, grid_len,normalizer, T.(grid_lims), T(denominator),basis_func, base_act, init_C, init_W,)
 end
 
 function LuxCore.initialparameters(
@@ -107,8 +103,9 @@ function LuxCore.parameterlength(
 end
 
 function (l::KDense{use_base_act})(x::AbstractArray, p, st) where{use_base_act}
-    size_in  = size(x)                          # [I, ..., batch,]
-    size_out = (l.out_dims, size_in[2:end]...,) # [O, ..., batch,]
+
+    size_in  = size(x)                          # [..., I]
+    size_out = (l.out_dims, size_in[2:end]...,) # [..., O]
 
     x = reshape(x, l.in_dims, :)
     K = size(x, 2)

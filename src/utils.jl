@@ -1,6 +1,8 @@
 #
 @inline _broadcast(f, args...) = @. f(args...)
 
+
+
 #======================================================#
 # Radial basis functions (RBF)
 #======================================================#
@@ -60,4 +62,15 @@ function CRC.rrule(::typeof(_iqf), x)
 
     y, ∇_iqf
 end
-#
+
+#======================================================#
+# Batched Multiplication using Einstein Summation
+#======================================================#
+
+@inline function batched_mul(x, coeffs)
+    result = similar(coeffs, size(x, 1), size(coeffs, 2))
+    @tensor begin
+        result[i, j] = x[i, 1, k] * coeffs[1, j, k]
+    end
+    result
+end

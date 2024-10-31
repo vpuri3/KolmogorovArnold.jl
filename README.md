@@ -2,6 +2,11 @@
 
 [![Build Status](https://github.com/vpuri3/KolmogorovArnold.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/vpuri3/KolmogorovArnold.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 
+Julia implementation of [FourierKAN](https://github.com/GistNoesis/FourierKAN)
+
+Julia implementation of [ChebyKAN](https://github.com/SynodicMonth/ChebyKAN)
+
+
 Julia implementation of the [Kolmogorov-Arnold network](https://arxiv.org/abs/2404.19756)
 for the [`Lux.jl`](https://lux.csail.mit.edu/stable/) framework.
 This implementation is based on [efficient-kan](https://github.com/Blealtan/efficient-kan)
@@ -23,7 +28,7 @@ x = rand32(rng, in_dim, 10)
 y = layer(x, p, st)
 ```
 
-We compare the performance of KAN with an MLP that has the same number of parameters (see `examples/eg1.jl`).
+We compare the performance of different implementation of KAN with an MLP that has the same number of parameters (see `examples/eg1.jl`).
 ```julia
 using Lux, KolmogorovArnold
 using CUDA, LuxDeviceUtils
@@ -34,8 +39,8 @@ device = Lux.gpu_device()
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-x = rand32(rng, 1, 1000) |> device
-
+x  = rand32(rng, 1, 1000) |> device
+x₀ = rand32(rng, 1000, 1) |> device
 # define MLP, KANs
 
 mlp = Chain(
@@ -59,35 +64,62 @@ kan2 = Chain(
     KDense(40,  1, 10; use_base_act = false, basis_func, normalizer),
 ) # 16_800 parameters plus 30 states.
 
+kan3 = Chain(
+    CDense( 1, 40, G),
+    CDense(40, 40, G),
+    CDense(40,  1, G),
+) # 18_561 parameters plus 0 states.
+
+kan4 = Chain(
+    FDense( 1, 30, G),
+    FDense(30, 30, G),
+    FDense(30,  1, G),
+) # 19_261 parameters plus 0 states.
+
 # set up experiment
-pM , stM  = Lux.setup(rng, mlp)
+pM, stM = Lux.setup(rng, mlp)
 pK1, stK1 = Lux.setup(rng, kan1)
 pK2, stK2 = Lux.setup(rng, kan2)
+pK3, stK3 = Lux.setup(rng, kan3)
+pK4, stK4 = Lux.setup(rng, kan4)
+
 
 pM  = ComponentArray(pM) |> device
 pK1 = ComponentArray(pK1) |> device
 pK2 = ComponentArray(pK2) |> device
+pK3 = ComponentArray(pK3) |> device
+pK4 = ComponentArray(pK4) |> device
 
-stM, stK1, stK2 = device(stM), device(stK1), device(stK2)
+stM, stK1, stK2, stK3, stK4 = device(stM), device(stK1), device(stK2), device(stK4), device(stK4)
 
 # Forward pass
-@btime CUDA.@sync $mlp( $x, $pM , $stM)  # 46.645 μs (267 allocations: 6.88 KiB)
-@btime CUDA.@sync $kan1($x, $pK1, $stK1) # 244.895 μs (1298 allocations: 31.16 KiB) 
-@btime CUDA.@sync $kan2($x, $pK2, $stK2) # 148.830 μs (887 allocations: 21.08 KiB)
+
+@btime CUDA.@sync $mlp($x, $pM, $stM)     # 31.611 μs (248 allocations: 5.45 KiB)
+@btime CUDA.@sync $kan1($x, $pK1, $stK1)  # 125.790 μs (1034 allocations: 21.97 KiB)
+@btime CUDA.@sync $kan2($x, $pK2, $stK2)  # 87.585 μs (1335 allocations: 13.95 KiB)
+@btime CUDA.@sync $kan3($x', $pK3, $stK3) # 210.785 μs (1335 allocations: 31.03 KiB)
+@btime CUDA.@sync $kan4($x', $pK4, $stK4) # 2.392 ms (1642 allocations: 34.56 KiB)
+
 
 # Backward pass
 
-f_mlp(p)  = mlp( x, p, stM )[1] |> sum
+f_mlp(p)  = mlp(x, p, stM)[1] |> sum
 f_kan1(p) = kan1(x, p, stK1)[1] |> sum
 f_kan2(p) = kan2(x, p, stK2)[1] |> sum
+f_kan3(p) = kan3(x₀, p, stK3)[1] |> sum
+f_kan4(p) = kan4(x₀, p, stK4)[1] |> sum
 
-@btime CUDA.@sync Zygote.gradient($f_mlp , $pM)  # 541.759 μs (2343 allocations: 70.77 KiB)
-@btime CUDA.@sync Zygote.gradient($f_kan1, $pK1) # 1.471 ms (6396 allocations: 171.08 KiB)
-@btime CUDA.@sync Zygote.gradient($f_kan2, $pK2) # 1.046 ms (4314 allocations: 123.08 KiB)
+
+@btime CUDA.@sync Zygote.gradient($f_mlp, $pM)   # 268.074 μs (1971 allocations: 57.03 KiB)
+@btime CUDA.@sync Zygote.gradient($f_kan1, $pK1) # 831.888 μs (5015 allocations: 123.25 KiB)
+@btime CUDA.@sync Zygote.gradient($f_kan2, $pK2) # 658.578 μs (3314 allocations: 87.16 KiB)
+@btime CUDA.@sync Zygote.gradient($f_kan3, $pK3) # 1.647 ms (7138 allocations: 180.45 KiB)
+@btime CUDA.@sync Zygote.gradient($f_kan4, $pK4) # 7.028 ms (8745 allocations: 199.42 KiB)
+
 
 ```
-The performance of KANs improves significantly with `use_base_act = false`.
-Although KANs are currently 2-3x slower than an MLPs with the same number of parameters,
+The performance of KAN with radial basis functions improves significantly with `use_base_act = false`.
+Although KANs are currently significantly slower than an MLPs with the same number of parameters,
 the promise with this architecture is that a small KAN can potentially do the work of a much bigger MLP.
 More experiments need to be done to assess the validity of this claim.
 

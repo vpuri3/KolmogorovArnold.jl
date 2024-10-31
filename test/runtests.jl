@@ -1,9 +1,16 @@
 using KolmogorovArnold
-using Test
+using Test, cuTENSOR
 
 pkgpath = dirname(dirname(pathof(KolmogorovArnold)))
 
-@testset "KolmogorovArnold.jl" begin
-    # Write your tests here.
+# Write your tests here.
+
+@testset "Speedtest" begin
     include(joinpath(pkgpath, "examples", "eg1.jl"))
 end
+
+
+@testset "FunctionFit" begin
+    include(joinpath(pkgpath, "examples", "eg4.jl"))
+end
+
