@@ -14,9 +14,13 @@ TensorOperations = "6aa20fa7-93e2-5fca-9bc0-fbd0db3c71a2"
 WeightInitializers = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 
 [compat]
-TensorOperations = "5.1.0"
+ChainRulesCore = "1"
+ConcreteStructs = "0.2"
 LuxCore = "1"
-julia = "1.6"
+NNlib = "0.9"
+TensorOperations = "5.1.0"
+WeightInitializers = "1"
+julia = "1.10"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
