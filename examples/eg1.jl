@@ -1,4 +1,4 @@
-#
+
 using KolmogorovArnold
 
 # Add test dependencies to env stack
@@ -135,6 +135,7 @@ function main(N=1000)
 
     nothing
 end
+
 #======================================================#
 main()
 #
