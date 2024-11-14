@@ -31,7 +31,7 @@ y = layer(x, p, st)
 We compare the performance of different implementation of KAN with an MLP that has the same number of parameters (see `examples/eg1.jl`).
 ```julia
 using Lux, KolmogorovArnold
-using CUDA, LuxDeviceUtils
+using LuxCUDA
 
 CUDA.allowscalar(false)
 device = Lux.gpu_device()
