@@ -1,7 +1,7 @@
 name = "KolmogorovArnold"
 uuid = "eec8b66d-f71a-4a43-b228-0fe5d6721cd3"
 authors = ["Vedant Puri <vedantpuri@gmail.com> and contributors"]
-version = "0.0.1"
+version = "0.0.2"
 
 [deps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
