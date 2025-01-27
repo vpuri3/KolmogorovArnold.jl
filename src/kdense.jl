@@ -24,7 +24,7 @@ function KDense(
     #
     normalizer = tanh,
     grid_lims::NTuple{2, Real} = (-1.0f0, 1.0f0),
-    denominator = Float32(2 / (grid_len - 1)),
+    denominator = nothing,
     #
     basis_func = rbf,
     #
@@ -47,7 +47,7 @@ function KDense(
         end
     end
 
-    grid_span =  grid_lims[2] > grid_lims[1]
+    grid_span =  grid_lims[2] - grid_lims[1]
     @assert grid_span > 0
 
     if isnothing(denominator)
